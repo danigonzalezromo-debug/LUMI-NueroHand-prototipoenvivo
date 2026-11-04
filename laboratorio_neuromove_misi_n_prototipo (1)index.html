@@ -1,0 +1,2108 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Laboratorio NeuroMove: Misión Prototipo</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts: Inter & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            lab: {
+              bg: '#060b14',
+              panel: '#0f172a',
+              card: '#1e293b',
+              cyan: '#06b6d4',
+              neon: '#10b981',
+              violet: '#8b5cf6',
+              amber: '#f59e0b',
+              rose: '#f43f5e'
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    body {
+      background-color: #060b14;
+      background-image: 
+        radial-gradient(circle at 15% 20%, rgba(6, 182, 212, 0.08) 0%, transparent 35%),
+        radial-gradient(circle at 85% 80%, rgba(139, 92, 246, 0.08) 0%, transparent 35%),
+        linear-gradient(to right, rgba(30, 41, 59, 0.25) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(30, 41, 59, 0.25) 1px, transparent 1px);
+      background-size: 100% 100%, 100% 100%, 32px 32px, 32px 32px;
+      color: #f8fafc;
+      overflow-x: hidden;
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #090d16;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #1e293b;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #06b6d4;
+    }
+
+    /* Neon Glow Effects */
+    .glow-cyan {
+      box-shadow: 0 0 18px rgba(6, 182, 212, 0.35), inset 0 0 8px rgba(6, 182, 212, 0.15);
+    }
+    .glow-neon {
+      box-shadow: 0 0 18px rgba(16, 185, 129, 0.4), inset 0 0 8px rgba(16, 185, 129, 0.15);
+    }
+    .glow-violet {
+      box-shadow: 0 0 20px rgba(139, 92, 246, 0.4), inset 0 0 10px rgba(139, 92, 246, 0.15);
+    }
+    .glow-amber {
+      box-shadow: 0 0 20px rgba(245, 158, 11, 0.4), inset 0 0 10px rgba(245, 158, 11, 0.15);
+    }
+
+    /* Pulse Animations */
+    @keyframes pulseRing {
+      0% { transform: scale(0.92); opacity: 0.85; }
+      50% { transform: scale(1.08); opacity: 0.4; }
+      100% { transform: scale(0.92); opacity: 0.85; }
+    }
+    .animate-pulse-ring {
+      animation: pulseRing 2.2s infinite ease-in-out;
+    }
+
+    @keyframes floatSlow {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-5px); }
+    }
+    .animate-float {
+      animation: floatSlow 3s infinite ease-in-out;
+    }
+
+    @keyframes vibrateHaptic {
+      0%, 100% { transform: translate(0, 0); }
+      20% { transform: translate(-2px, 1px); }
+      40% { transform: translate(2px, -1px); }
+      60% { transform: translate(-2px, -1px); }
+      80% { transform: translate(2px, 1px); }
+    }
+    .vibrate-active {
+      animation: vibrateHaptic 0.08s infinite linear;
+    }
+
+    /* Math Formula Box */
+    .math-display {
+      font-family: 'JetBrains Mono', monospace;
+      background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.85));
+      border: 1px solid rgba(6, 182, 212, 0.35);
+    }
+
+    /* Game Canvas Responsive */
+    #labCanvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      cursor: pointer;
+      touch-action: none;
+    }
+
+    /* D-Pad Buttons */
+    .dpad-btn {
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid rgba(6, 182, 212, 0.4);
+      backdrop-filter: blur(6px);
+      transition: all 0.12s ease;
+    }
+    .dpad-btn:active {
+      background: rgba(6, 182, 212, 0.35);
+      transform: scale(0.93);
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between">
+
+  <!-- CONFETTI OVERLAY CANVAS -->
+  <canvas id="confettiCanvas" class="fixed inset-0 pointer-events-none z-50 hidden"></canvas>
+
+  <!-- TOP NAVIGATION & HEADER -->
+  <header class="sticky top-0 z-30 bg-slate-950/90 backdrop-blur-md border-b border-cyan-500/20 px-3 sm:px-6 py-2.5">
+    <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-2">
+      <!-- Brand Title -->
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500 to-violet-600 flex items-center justify-center shadow-lg shadow-cyan-500/20">
+          <i class="fa-solid fa-microchip text-white text-lg"></i>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="text-base sm:text-xl font-extrabold tracking-tight bg-gradient-to-r from-cyan-400 via-emerald-300 to-violet-400 bg-clip-text text-transparent">
+              Laboratorio NeuroMove
+            </h1>
+            <span class="hidden md:inline-block text-[11px] font-mono uppercase px-2 py-0.5 rounded-full bg-cyan-500/15 text-cyan-300 border border-cyan-500/30">
+              Biomed &amp; Kine
+            </span>
+          </div>
+          <p class="text-xs text-slate-400 hidden sm:block">
+            Resuelve derivadas e integrales para recolectar los 6 componentes y ensamblar el exoesqueleto
+          </p>
+        </div>
+      </div>
+
+      <!-- Status & Controls -->
+      <div class="flex items-center gap-2 sm:gap-3">
+        <!-- Progress Pill -->
+        <div class="flex items-center gap-2 bg-slate-900/90 border border-slate-700/80 px-3 py-1.5 rounded-xl">
+          <span class="text-xs text-slate-400 font-medium">Materiales:</span>
+          <span id="headerProgressText" class="text-sm font-mono font-bold text-cyan-400">0/6</span>
+          <div class="w-16 sm:w-24 h-2 bg-slate-800 rounded-full overflow-hidden">
+            <div id="headerProgressBar" class="h-full bg-gradient-to-r from-cyan-400 to-emerald-400 transition-all duration-500" style="width: 0%"></div>
+          </div>
+        </div>
+
+        <!-- Prototype Simulator Button -->
+        <button id="btnOpenSimulatorTop" onclick="openAssemblyModal()" class="px-3 py-1.5 rounded-xl text-xs sm:text-sm font-semibold transition-all flex items-center gap-1.5 bg-slate-800/80 hover:bg-slate-700 text-slate-300 border border-slate-700">
+          <i class="fa-solid fa-hand-sparkles text-violet-400"></i>
+          <span class="hidden sm:inline">Mesa de Ensamblaje</span>
+          <span id="assemblyBadge" class="px-1.5 py-0.2 rounded text-[10px] bg-slate-700 text-slate-300 font-mono">Bloqueado</span>
+        </button>
+
+        <!-- How to Play / Guide Button -->
+        <button onclick="openHelpModal()" class="p-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-cyan-400 border border-slate-700/80 transition" title="Guía del Laboratorio y Fórmulas">
+          <i class="fa-solid fa-circle-question"></i>
+        </button>
+
+        <!-- Sound Toggle Button -->
+        <button id="btnSoundToggle" onclick="toggleSound()" class="p-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-emerald-400 border border-slate-700/80 transition" title="Activar/Silenciar Sonido">
+          <i id="soundIcon" class="fa-solid fa-volume-high"></i>
+        </button>
+
+        <!-- Reset Game -->
+        <button onclick="resetGamePrompt()" class="p-2 rounded-xl bg-slate-900 hover:bg-rose-950/60 text-slate-400 hover:text-rose-400 border border-slate-700/80 transition" title="Reiniciar Misión">
+          <i class="fa-solid fa-rotate-right"></i>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN CONTENT AREA -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 py-4 flex flex-col gap-4">
+
+    <!-- REAL-TIME INVENTORY BAR (6 REQUIRED MATERIALS) -->
+    <section aria-label="Inventario de Materiales" class="bg-slate-900/85 backdrop-blur-md border border-slate-800 rounded-2xl p-3 sm:p-4 shadow-xl">
+      <div class="flex items-center justify-between mb-2.5">
+        <div class="flex items-center gap-2">
+          <i class="fa-solid fa-boxes-stacked text-cyan-400 text-sm"></i>
+          <h2 class="text-xs sm:text-sm font-bold uppercase tracking-wider text-slate-200">
+            Inventario del Prototipo (Haz clic en una estación para recolectar)
+          </h2>
+        </div>
+        <span id="inventoryStatusHint" class="text-xs text-cyan-400 font-mono">
+          ¡Selecciona o camina hacia una estación!
+        </span>
+      </div>
+
+      <!-- 6 Material Slots Grid -->
+      <div id="inventoryGrid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
+        <!-- Populated dynamically by JS -->
+      </div>
+    </section>
+
+    <!-- GAME MAP & SIDEBAR LAYOUT -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
+
+      <!-- INTERACTIVE 2D LAB CANVAS CONTAINER (8 COLUMNS ON DESKTOP) -->
+      <div class="lg:col-span-8 flex flex-col bg-slate-900/90 border border-cyan-500/25 rounded-2xl overflow-hidden shadow-2xl relative min-h-[380px] sm:min-h-[470px]">
+        <!-- Top Canvas Overlay Bar -->
+        <div class="flex flex-wrap items-center justify-between gap-2 px-3.5 py-2 bg-slate-950/80 border-b border-slate-800 text-xs">
+          <div class="flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping"></span>
+            <span class="font-semibold text-slate-200">Mapa del Laboratorio de Biomecánica</span>
+          </div>
+          <div class="flex items-center gap-3 text-slate-400">
+            <span><i class="fa-solid fa-keyboard text-cyan-400 mr-1"></i>WASD / Flechas</span>
+            <span><i class="fa-solid fa-hand-pointer text-violet-400 mr-1"></i>Clic directo en estaciones</span>
+          </div>
+        </div>
+
+        <!-- Canvas Wrapper -->
+        <div id="canvasContainer" class="relative flex-1 w-full h-[360px] sm:h-[440px] bg-slate-950">
+          <canvas id="labCanvas"></canvas>
+
+          <!-- Floating Proximity Prompt Button -->
+          <div id="proximityBanner" class="hidden absolute top-3 left-1/2 -translate-x-1/2 z-20">
+            <button id="btnProximityAction" class="px-4 py-2 rounded-full bg-gradient-to-r from-cyan-500 to-emerald-500 text-slate-950 font-bold text-xs sm:text-sm shadow-lg shadow-cyan-500/30 flex items-center gap-2 hover:scale-105 transition transform">
+              <i class="fa-solid fa-flask"></i>
+              <span id="proximityText">Inspeccionar Estación</span>
+            </button>
+          </div>
+
+          <!-- On-Screen Touch D-Pad for Mobile / Tablet -->
+          <div class="absolute bottom-3 left-3 z-20 flex flex-col items-center gap-1 sm:opacity-85 hover:opacity-100 transition">
+            <button id="dpadUp" aria-label="Mover Arriba" class="dpad-btn w-10 h-10 rounded-xl flex items-center justify-center text-cyan-300">
+              <i class="fa-solid fa-chevron-up"></i>
+            </button>
+            <div class="flex items-center gap-1">
+              <button id="dpadLeft" aria-label="Mover Izquierda" class="dpad-btn w-10 h-10 rounded-xl flex items-center justify-center text-cyan-300">
+                <i class="fa-solid fa-chevron-left"></i>
+              </button>
+              <button id="dpadDown" aria-label="Mover Abajo" class="dpad-btn w-10 h-10 rounded-xl flex items-center justify-center text-cyan-300">
+                <i class="fa-solid fa-chevron-down"></i>
+              </button>
+              <button id="dpadRight" aria-label="Mover Derecha" class="dpad-btn w-10 h-10 rounded-xl flex items-center justify-center text-cyan-300">
+                <i class="fa-solid fa-chevron-right"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Legend Overlay Bottom Right -->
+          <div class="absolute bottom-3 right-3 z-10 bg-slate-950/85 backdrop-blur-md border border-slate-800 rounded-xl px-3 py-2 text-[11px] text-slate-300 hidden sm:flex flex-col gap-1">
+            <div class="flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-cyan-400 inline-block"></span>
+              <span>Estación Pendiente (Clic para resolver)</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 inline-block"></span>
+              <span>Material Recolectado</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-violet-400 inline-block"></span>
+              <span>Mesa Central de Ensamblaje</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- DIRECT ACCESS STATIONS & MISSION CONTROL (4 COLUMNS ON DESKTOP) -->
+      <div class="lg:col-span-4 flex flex-col gap-3">
+        <!-- Mission Briefing Card -->
+        <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 flex flex-col justify-between shadow-xl">
+          <div>
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-xs font-mono uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-violet-500/15 text-violet-300 border border-violet-500/30">
+                Acceso Directo a Estaciones
+              </span>
+              <span id="scoreCounter" class="text-xs font-mono text-emerald-400 font-semibold">
+                Precisión: 100%
+              </span>
+            </div>
+            <h3 class="text-base font-bold text-white mb-1">
+              Estaciones de Cálculo Biomédico
+            </h3>
+            <p class="text-xs text-slate-400 leading-relaxed mb-3">
+              Puedes caminar por el laboratorio con tu avatar o hacer clic directamente en cualquier estación de la lista inferior para resolver la derivada o integral y obtener el componente.
+            </p>
+          </div>
+
+          <!-- Station Quick-Access List -->
+          <div id="stationQuickList" class="flex flex-col gap-2 max-h-[310px] overflow-y-auto pr-1">
+            <!-- Populated by JS -->
+          </div>
+
+          <!-- Final Assembly CTA Button -->
+          <div class="mt-3 pt-3 border-t border-slate-800">
+            <button id="btnSidebarAssembly" onclick="openAssemblyModal()" class="w-full py-3 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all bg-slate-800 text-slate-400 border border-slate-700 hover:border-violet-500/50">
+              <i class="fa-solid fa-screwdriver-wrench"></i>
+              <span id="btnSidebarAssemblyText">Recolecta los 6 materiales (0/6)</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="bg-slate-950/90 border-t border-slate-900 py-3 px-4 text-center text-xs text-slate-500 mt-4">
+    <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
+      <span><strong>Proyecto Mate Biomed Kine</strong> — Plataforma Exoesquelética Modular Activa</span>
+      <span class="font-mono text-[11px] text-slate-400">Cálculo Diferencial ($\frac{dV}{dx}, \frac{dT}{dt}, \frac{d\theta}{dt}$) &bull; Cálculo Integral ($\int \tau d\theta, \int A dt, \int r d\theta$)</span>
+    </div>
+  </footer>
+
+  <!-- =========================================================================
+       MODAL 1: MATH CHALLENGE STATION MODAL
+       ========================================================================= -->
+  <div id="challengeModal" class="fixed inset-0 z-40 bg-slate-950/80 backdrop-blur-md hidden items-center justify-center p-3 sm:p-5 overflow-y-auto">
+    <div class="bg-slate-900 border border-cyan-500/40 rounded-2xl max-w-2xl w-full p-4 sm:p-6 shadow-2xl glow-cyan relative my-auto max-h-[92vh] overflow-y-auto">
+      
+      <!-- Modal Header -->
+      <div class="flex items-start justify-between gap-3 pb-3 border-b border-slate-800">
+        <div class="flex items-center gap-3">
+          <div id="modalMaterialIcon" class="w-14 h-14 rounded-2xl bg-slate-800 border border-cyan-500/30 flex items-center justify-center shrink-0">
+            <!-- SVG Injected -->
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <span id="modalCalcBadge" class="text-[11px] font-mono uppercase px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
+                Cálculo
+              </span>
+              <span id="modalStationNumber" class="text-xs font-mono text-slate-400">Estación #1</span>
+            </div>
+            <h3 id="modalMaterialTitle" class="text-lg sm:text-xl font-extrabold text-white mt-0.5">
+              Nombre del Material
+            </h3>
+          </div>
+        </div>
+        <button onclick="closeChallengeModal()" class="w-9 h-9 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center transition">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+
+      <!-- Biomedical Context Section -->
+      <div class="mt-4 bg-slate-950/70 border border-slate-800/90 rounded-xl p-3.5">
+        <div class="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-emerald-400 mb-1">
+          <i class="fa-solid fa-heart-pulse"></i>
+          <span>Aplicación Clínica y Biomecánica en el Prototipo</span>
+        </div>
+        <p id="modalBiomedContext" class="text-xs sm:text-sm text-slate-300 leading-relaxed">
+          Contexto del componente...
+        </p>
+      </div>
+
+      <!-- Math Problem Formulation -->
+      <div class="mt-4">
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-xs font-bold uppercase tracking-wider text-cyan-400">
+            <i class="fa-solid fa-square-root-variable mr-1"></i>Desafío Matemático de Desbloqueo
+          </span>
+          <button onclick="toggleHintBox()" class="px-3 py-1 rounded-lg bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/40 text-xs font-semibold flex items-center gap-1.5 transition">
+            <i class="fa-solid fa-lightbulb"></i>
+            <span id="btnHintToggleText">💡 Ver Pista Paso a Paso</span>
+          </button>
+        </div>
+
+        <p id="modalQuestionText" class="text-sm sm:text-base text-slate-100 font-medium leading-relaxed mb-3">
+          Enunciado de la pregunta...
+        </p>
+
+        <!-- Formula Box -->
+        <div id="modalFormulaBox" class="math-display rounded-xl p-3.5 text-center text-base sm:text-lg font-bold text-cyan-300 mb-4 tracking-wide shadow-inner">
+          <!-- Formula Injected -->
+        </div>
+
+        <!-- Step-by-Step Hint Accordion -->
+        <div id="modalHintBox" class="hidden mb-4 bg-amber-950/30 border border-amber-500/40 rounded-xl p-3.5 text-xs sm:text-sm text-amber-100 space-y-1.5">
+          <div class="font-bold text-amber-300 flex items-center gap-1.5">
+            <i class="fa-solid fa-wand-magic-sparkles"></i>
+            <span>Resolución Guiada Paso a Paso:</span>
+          </div>
+          <div id="modalHintSteps" class="space-y-1 text-slate-200 font-mono text-xs leading-relaxed">
+            <!-- Steps Injected -->
+          </div>
+        </div>
+
+        <!-- Multiple Choice Options -->
+        <div class="mb-3">
+          <p class="text-xs text-slate-400 mb-2 font-medium">Selecciona la respuesta correcta:</p>
+          <div id="modalOptionsGrid" class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            <!-- Options buttons injected -->
+          </div>
+        </div>
+
+        <!-- Direct Numeric Input Option -->
+        <div class="mt-3 pt-3 border-t border-slate-800/80 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2">
+          <label for="directNumericInput" class="text-xs text-slate-400">
+            ¿Prefieres escribir el valor numérico directo?:
+          </label>
+          <div class="flex items-center gap-2">
+            <input id="directNumericInput" type="number" step="any" placeholder="Ingresa el número..." class="bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-1.5 text-sm font-mono text-white w-full sm:w-40 outline-none" />
+            <button onclick="submitDirectInput()" class="px-4 py-1.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs sm:text-sm transition shrink-0">
+              Verificar
+            </button>
+          </div>
+        </div>
+
+        <!-- Feedback Banner inside Modal -->
+        <div id="modalFeedbackBox" class="hidden mt-4 p-3.5 rounded-xl text-xs sm:text-sm font-medium items-center justify-between gap-3">
+          <div class="flex items-center gap-2.5">
+            <i id="modalFeedbackIcon" class="fa-solid fa-circle-check text-lg"></i>
+            <span id="modalFeedbackText">Mensaje de respuesta</span>
+          </div>
+          <button id="modalContinueBtn" onclick="closeChallengeModal()" class="hidden px-4 py-1.5 rounded-lg bg-emerald-400 hover:bg-emerald-300 text-slate-950 font-bold text-xs shrink-0 transition">
+            ¡Continuar!
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- =========================================================================
+       MODAL 2: FINAL PROTOTYPE ASSEMBLY & LIVE INTERACTIVE SIMULATOR
+       ========================================================================= -->
+  <div id="assemblyModal" class="fixed inset-0 z-40 bg-slate-950/85 backdrop-blur-md hidden items-center justify-center p-2 sm:p-5 overflow-y-auto">
+    <div class="bg-slate-900 border border-violet-500/50 rounded-2xl max-w-5xl w-full p-4 sm:p-6 shadow-2xl glow-violet relative my-auto max-h-[95vh] overflow-y-auto">
+      
+      <!-- Header -->
+      <div class="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-800">
+        <div class="flex items-center gap-3">
+          <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-violet-500 to-cyan-500 flex items-center justify-center text-white shadow-lg">
+            <i class="fa-solid fa-robot text-xl"></i>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="text-[11px] font-mono uppercase px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
+                ¡6/6 Materiales Listos!
+              </span>
+              <span class="text-xs font-mono text-violet-300">Hardware-in-the-Loop</span>
+            </div>
+            <h2 class="text-lg sm:text-2xl font-extrabold text-white">
+              Mesa de Ensamblaje y Simulador NeuroMove
+            </h2>
+          </div>
+        </div>
+
+        <button onclick="closeAssemblyModal()" class="w-9 h-9 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center transition">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+
+      <!-- STEP 1: QUICK ASSEMBLY ARCHITECTURE VERIFICATION -->
+      <div id="assemblyStepContainer" class="mt-4 bg-slate-950/80 border border-slate-800 rounded-2xl p-4">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
+          <div>
+            <h3 class="text-sm sm:text-base font-bold text-cyan-300 flex items-center gap-2">
+              <i class="fa-solid fa-diagram-project"></i>
+              <span>Esquema Integrador del Bucle Cerrado (ESP32-S3)</span>
+            </h3>
+            <p class="text-xs text-slate-400">
+              Haz clic en los componentes para integrarlos al chasis del guante exoesquelético o presiona "Ensamblar Todo Automáticamente".
+            </p>
+          </div>
+          <button id="btnAutoAssemble" onclick="assembleAllInstantly()" class="px-4 py-2 rounded-xl bg-gradient-to-r from-violet-500 to-cyan-500 hover:from-violet-400 hover:to-cyan-400 text-white font-bold text-xs sm:text-sm shadow-lg transition shrink-0">
+            <i class="fa-solid fa-bolt mr-1"></i> Ensamblar y Activar Prototipo
+          </button>
+        </div>
+
+        <!-- 6 Chip Integration Slots -->
+        <div id="assemblySlotsGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+
+      <!-- STEP 2: INTERACTIVE BIOMECHANICAL EXOSKELETON SIMULATOR -->
+      <div id="simulatorInteractivePanel" class="mt-4 grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
+        
+        <!-- LEFT COLUMN: INTERACTIVE HAND & EXOSKELETON VISUALIZER (7 COLS) -->
+        <div class="lg:col-span-7 bg-slate-950 border border-slate-800 rounded-2xl p-4 flex flex-col justify-between relative overflow-hidden">
+          <div class="flex flex-wrap items-center justify-between gap-2 z-10 mb-2">
+            <div>
+              <span class="text-[11px] font-mono uppercase text-cyan-400 block">Simulación en Tiempo Real</span>
+              <h4 class="text-sm sm:text-base font-bold text-white">Guante Exoesquelético con Tracción por Hilo y Piezos</h4>
+            </div>
+            <div id="simStatusPill" class="px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-xs font-mono flex items-center gap-1.5">
+              <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+              <span>ESP32-S3 ACTIVA (5V / 3.3V)</span>
+            </div>
+          </div>
+
+          <!-- Interactive SVG Diagram of Exoskeleton Hand, Piezos, Servo, Hilo, Gyro & ESP32-S3 -->
+          <div class="relative flex-1 flex items-center justify-center my-2 min-h-[290px]">
+            <svg id="prototypeSvg" viewBox="0 0 650 380" class="w-full h-auto max-h-[340px] select-none">
+              <defs>
+                <linearGradient id="gloveGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#1e293b" />
+                  <stop offset="100%" stop-color="#0f172a" />
+                </linearGradient>
+                <linearGradient id="tendonGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stop-color="#10b981" />
+                  <stop offset="100%" stop-color="#06b6d4" />
+                </linearGradient>
+                <filter id="neonGlow" x="-20%" y="-20%" width="140%" height="140%">
+                  <feGaussianBlur stdDeviation="4" result="blur" />
+                  <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                </filter>
+              </defs>
+
+              <!-- Background Technical Grid -->
+              <rect x="10" y="10" width="630" height="360" rx="16" fill="#090d16" stroke="#1e293b" stroke-width="1.5" />
+
+              <!-- FOREARM SUPPORT & ESP32-S3 MODULE -->
+              <g id="svgForearmGroup">
+                <!-- Forearm Brace -->
+                <rect x="35" y="110" width="210" height="165" rx="22" fill="url(#gloveGrad)" stroke="#334155" stroke-width="2" />
+                <text x="140" y="132" text-anchor="middle" fill="#94a3b8" font-size="10" font-family="JetBrains Mono">SOPORTE ANTEBRAZO</text>
+
+                <!-- ESP32-S3 Microcontroller Board -->
+                <rect id="svgEspBoard" x="50" y="145" width="95" height="68" rx="6" fill="#0f172a" stroke="#06b6d4" stroke-width="2" />
+                <rect x="62" y="155" width="42" height="30" rx="3" fill="#1e293b" stroke="#64748b" stroke-width="1" />
+                <text x="97" y="203" text-anchor="middle" fill="#06b6d4" font-size="9" font-weight="bold" font-family="JetBrains Mono">ESP32-S3 WROOM</text>
+                <!-- Status LED on ESP32 -->
+                <circle id="svgEspLed" cx="132" cy="158" r="4" fill="#10b981" filter="url(#neonGlow)" />
+
+                <!-- GIROSCOPIO / IMU MODULE -->
+                <rect id="svgGyroBox" x="50" y="222" width="95" height="40" rx="6" fill="#1e1b4b" stroke="#8b5cf6" stroke-width="2" />
+                <text x="97" y="239" text-anchor="middle" fill="#c4b5fd" font-size="9" font-weight="bold" font-family="JetBrains Mono">GIROSCOPIO IMU</text>
+                <text id="svgGyroText" x="97" y="253" text-anchor="middle" fill="#a78bfa" font-size="10" font-family="JetBrains Mono">θ = 0° | ω = 0 rad/s</text>
+
+                <!-- SERVOMOTOR DE ALTO TORQUE MG996R + PULLEY -->
+                <rect x="158" y="148" width="75" height="112" rx="8" fill="#1e293b" stroke="#f59e0b" stroke-width="2" />
+                <text x="195" y="242" text-anchor="middle" fill="#fcd34d" font-size="8.5" font-weight="bold" font-family="JetBrains Mono">SERVO MG996R</text>
+                <text x="195" y="253" text-anchor="middle" fill="#94a3b8" font-size="8" font-family="JetBrains Mono">GPIO 7 (PWM)</text>
+
+                <!-- Rotating Servo Horn & Pulley -->
+                <g id="svgServoPulley" transform="translate(195, 188) rotate(0)">
+                  <circle cx="0" cy="0" r="24" fill="#0f172a" stroke="#f59e0b" stroke-width="2.5" />
+                  <line x1="-20" y1="0" x2="20" y2="0" stroke="#f59e0b" stroke-width="4" stroke-linecap="round" />
+                  <line x1="0" y1="-20" x2="0" y2="20" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" />
+                  <circle cx="0" cy="0" r="6" fill="#fbbf24" />
+                  <circle cx="16" cy="0" r="3" fill="#ef4444" />
+                </g>
+              </g>
+
+              <!-- HAND & FINGERS STRUCTURE -->
+              <g id="svgHandGroup">
+                <!-- Palm Base -->
+                <path d="M 275 115 Q 375 95 415 120 L 415 265 Q 375 290 275 270 Z" fill="url(#gloveGrad)" stroke="#475569" stroke-width="2" />
+                <text x="345" y="195" text-anchor="middle" fill="#64748b" font-size="10" font-family="JetBrains Mono">GUANTE TEXTIL</text>
+
+                <!-- 5 FINGERS + PIEZO SENSORS (CLICKABLE) -->
+                <!-- Finger 1: Pulgar (GPIO 5) -->
+                <g id="fingerGroup0" class="cursor-pointer" onclick="triggerPiezoFinger(0)">
+                  <path id="fingerPath0" d="M 330 112 Q 365 60 415 52" fill="none" stroke="#334155" stroke-width="24" stroke-linecap="round" />
+                  <!-- Hilo UHMWPE Tendon Line -->
+                  <path id="tendonLine0" d="M 195 168 Q 290 110 415 52" fill="none" stroke="url(#tendonGrad)" stroke-width="2.5" stroke-dasharray="5,3" />
+                  <!-- Piezo Disc 1 -->
+                  <circle id="piezoDisc0" cx="415" cy="52" r="14" fill="#fef08a" stroke="#f59e0b" stroke-width="3" />
+                  <circle cx="415" cy="52" r="8" fill="#ffffff" />
+                  <text x="415" y="30" text-anchor="middle" fill="#38bdf8" font-size="9" font-family="JetBrains Mono">Pulgar (G5)</text>
+                </g>
+
+                <!-- Finger 2: Índice (GPIO 1) -->
+                <g id="fingerGroup1" class="cursor-pointer" onclick="triggerPiezoFinger(1)">
+                  <path id="fingerPath1" d="M 410 132 L 545 105" fill="none" stroke="#334155" stroke-width="22" stroke-linecap="round" />
+                  <path id="tendonLine1" d="M 195 176 L 545 105" fill="none" stroke="url(#tendonGrad)" stroke-width="2.5" stroke-dasharray="5,3" />
+                  <circle id="piezoDisc1" cx="545" cy="105" r="14" fill="#fef08a" stroke="#f59e0b" stroke-width="3" />
+                  <circle cx="545" cy="105" r="8" fill="#ffffff" />
+                  <text x="545" y="83" text-anchor="middle" fill="#38bdf8" font-size="9" font-family="JetBrains Mono">Índice (G1)</text>
+                </g>
+
+                <!-- Finger 3: Medio (GPIO 2) -->
+                <g id="fingerGroup2" class="cursor-pointer" onclick="triggerPiezoFinger(2)">
+                  <path id="fingerPath2" d="M 415 178 L 570 175" fill="none" stroke="#334155" stroke-width="22" stroke-linecap="round" />
+                  <path id="tendonLine2" d="M 195 188 L 570 175" fill="none" stroke="url(#tendonGrad)" stroke-width="2.5" stroke-dasharray="5,3" />
+                  <circle id="piezoDisc2" cx="570" cy="175" r="14" fill="#fef08a" stroke="#f59e0b" stroke-width="3" />
+                  <circle cx="570" cy="175" r="8" fill="#ffffff" />
+                  <text x="570" y="153" text-anchor="middle" fill="#38bdf8" font-size="9" font-family="JetBrains Mono">Medio (G2)</text>
+                </g>
+
+                <!-- Finger 4: Anular (GPIO 3) -->
+                <g id="fingerGroup3" class="cursor-pointer" onclick="triggerPiezoFinger(3)">
+                  <path id="fingerPath3" d="M 412 222 L 550 245" fill="none" stroke="#334155" stroke-width="21" stroke-linecap="round" />
+                  <path id="tendonLine3" d="M 195 198 L 550 245" fill="none" stroke="url(#tendonGrad)" stroke-width="2.5" stroke-dasharray="5,3" />
+                  <circle id="piezoDisc3" cx="550" cy="245" r="14" fill="#fef08a" stroke="#f59e0b" stroke-width="3" />
+                  <circle cx="550" cy="245" r="8" fill="#ffffff" />
+                  <text x="550" y="272" text-anchor="middle" fill="#38bdf8" font-size="9" font-family="JetBrains Mono">Anular (G3)</text>
+                </g>
+
+                <!-- Finger 5: Meñique (GPIO 10) -->
+                <g id="fingerGroup4" class="cursor-pointer" onclick="triggerPiezoFinger(4)">
+                  <path id="fingerPath4" d="M 400 258 L 505 312" fill="none" stroke="#334155" stroke-width="19" stroke-linecap="round" />
+                  <path id="tendonLine4" d="M 195 206 L 505 312" fill="none" stroke="url(#tendonGrad)" stroke-width="2.5" stroke-dasharray="5,3" />
+                  <circle id="piezoDisc4" cx="505" cy="312" r="14" fill="#fef08a" stroke="#f59e0b" stroke-width="3" />
+                  <circle cx="505" cy="312" r="8" fill="#ffffff" />
+                  <text x="505" y="340" text-anchor="middle" fill="#38bdf8" font-size="9" font-family="JetBrains Mono">Meñique (G10)</text>
+                </g>
+
+                <!-- Haptic Wave Ring Indicator (Hidden until Piezo clicked) -->
+                <circle id="svgHapticWave" cx="545" cy="105" r="24" fill="none" stroke="#10b981" stroke-width="3" opacity="0" />
+              </g>
+
+              <!-- Bottom Legend inside SVG -->
+              <text x="30" y="352" fill="#94a3b8" font-size="10.5" font-family="Inter">
+                💡 Haz clic en cualquier disco Piezo amarillo de los dedos o desliza el Giroscopio a la derecha
+              </text>
+            </svg>
+          </div>
+
+          <!-- Quick Finger Trigger Buttons for Mobile Convenience -->
+          <div class="flex flex-wrap items-center justify-between gap-1.5 pt-2 border-t border-slate-800/80">
+            <span class="text-xs text-slate-400 font-medium">Probar Contacto en Piezos (250 Hz):</span>
+            <div class="flex flex-wrap gap-1.5">
+              <button onclick="triggerPiezoFinger(0)" class="px-2.5 py-1 rounded-lg bg-amber-500/15 hover:bg-amber-500/30 border border-amber-500/40 text-amber-300 text-xs font-mono transition">
+                Pulgar (G5)
+              </button>
+              <button onclick="triggerPiezoFinger(1)" class="px-2.5 py-1 rounded-lg bg-amber-500/15 hover:bg-amber-500/30 border border-amber-500/40 text-amber-300 text-xs font-mono transition">
+                Índice (G1)
+              </button>
+              <button onclick="triggerPiezoFinger(2)" class="px-2.5 py-1 rounded-lg bg-amber-500/15 hover:bg-amber-500/30 border border-amber-500/40 text-amber-300 text-xs font-mono transition">
+                Medio (G2)
+              </button>
+              <button onclick="triggerPiezoFinger(3)" class="px-2.5 py-1 rounded-lg bg-amber-500/15 hover:bg-amber-500/30 border border-amber-500/40 text-amber-300 text-xs font-mono transition">
+                Anular (G3)
+              </button>
+              <button onclick="triggerPiezoFinger(4)" class="px-2.5 py-1 rounded-lg bg-amber-500/15 hover:bg-amber-500/30 border border-amber-500/40 text-amber-300 text-xs font-mono transition">
+                Meñique (G10)
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- RIGHT COLUMN: CONTROLS & LIVE MATH TELEMETRY (5 COLS) -->
+        <div class="lg:col-span-5 flex flex-col justify-between gap-3">
+          
+          <!-- Control 1: Giroscopio & Servomotor Traction -->
+          <div class="bg-slate-950 border border-slate-800 rounded-2xl p-4">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-xs font-bold uppercase tracking-wider text-violet-400">
+                <i class="fa-solid fa-compass mr-1"></i>Control Angular: Giroscopio → Servo
+              </span>
+              <span id="simAngleValue" class="text-sm font-mono font-bold text-cyan-300">0° (0.00 rad)</span>
+            </div>
+            <p class="text-xs text-slate-400 mb-3">
+              Mueve el Giroscopio para detectar velocidad angular ($\omega = \frac{d\theta}{dt}$). El Servomotor MG996R girará en sincronía tensando el Hilo UHMWPE.
+            </p>
+            <input id="gyroSlider" type="range" min="0" max="140" value="0" oninput="updateGyroSimulation(this.value)" class="w-full accent-cyan-400 cursor-pointer h-2 bg-slate-800 rounded-lg" />
+            <div class="flex justify-between text-[11px] font-mono text-slate-500 mt-1">
+              <span>0° (Extensión / Reposo)</span>
+              <span>70° (Semiflexión)</span>
+              <span>140° (Agarre Máximo)</span>
+            </div>
+          </div>
+
+          <!-- Live Mathematical Telemetry Readout -->
+          <div class="bg-slate-950 border border-slate-800 rounded-2xl p-4 space-y-2.5 flex-1 flex flex-col justify-center">
+            <div class="text-xs font-bold uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
+              <i class="fa-solid fa-wave-square"></i>
+              <span>Telemetría Matemática en Tiempo Real</span>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2 text-xs font-mono">
+              <div class="bg-slate-900/90 border border-slate-800 p-2.5 rounded-xl">
+                <span class="text-slate-400 block text-[10px]">Tensión Hilo T(t):</span>
+                <span id="telemetryTension" class="text-sm font-bold text-cyan-300">0.0 N</span>
+              </div>
+              <div class="bg-slate-900/90 border border-slate-800 p-2.5 rounded-xl">
+                <span class="text-slate-400 block text-[10px]">Trabajo Integral W:</span>
+                <span id="telemetryWork" class="text-sm font-bold text-emerald-300">0.00 J</span>
+              </div>
+              <div class="bg-slate-900/90 border border-slate-800 p-2.5 rounded-xl">
+                <span class="text-slate-400 block text-[10px]">Acortamiento Cable s:</span>
+                <span id="telemetryCable" class="text-sm font-bold text-amber-300">0.0 mm</span>
+              </div>
+              <div class="bg-slate-900/90 border border-slate-800 p-2.5 rounded-xl">
+                <span class="text-slate-400 block text-[10px]">Estado Háptico Piezo:</span>
+                <span id="telemetryPiezo" class="text-sm font-bold text-violet-300">INPUT (ADC)</span>
+              </div>
+            </div>
+
+            <!-- Serial Monitor Log -->
+            <div class="bg-black/80 border border-slate-800 rounded-xl p-2.5 font-mono text-[11px] text-emerald-400 h-28 overflow-y-auto" id="serialMonitorLog">
+              <div>[ESP32-S3] Sistema Sensoriomotor Iniciado (115200 baud)...</div>
+              <div>[I2C / PWM] Servomotor MG996R listo en GPIO 7 (50 Hz).</div>
+              <div>[ADC] 5 Sensores Piezo de 12mm monitoreando derivadas dV/dx.</div>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+
+  <!-- =========================================================================
+       MODAL 3: HELP / FORMULA REFERENCE & MATERIAL DETAILS MODAL
+       ========================================================================= -->
+  <div id="helpModal" class="fixed inset-0 z-40 bg-slate-950/80 backdrop-blur-md hidden items-center justify-center p-3 sm:p-5 overflow-y-auto">
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-2xl w-full p-5 sm:p-6 shadow-2xl relative my-auto max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+        <h3 class="text-lg font-extrabold text-white flex items-center gap-2">
+          <i class="fa-solid fa-book-medical text-cyan-400"></i>
+          <span>Guía del Laboratorio y Formulario de Cálculo</span>
+        </h3>
+        <button onclick="closeHelpModal()" class="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="mt-4 space-y-4 text-xs sm:text-sm text-slate-300 leading-relaxed">
+        <div class="bg-slate-950 border border-slate-800 rounded-xl p-3.5">
+          <h4 class="font-bold text-cyan-400 mb-1">🎯 Objetivo de la Misión</h4>
+          <p>
+            Debes recolectar los <strong>6 componentes esenciales</strong> del wearable de neurorehabilitación: <strong>Cables, Sensores Piezo, Hilo (UHMWPE), Servomotor de Alto Torque, Giroscopio y ESP32-S3</strong>. Desplázate por el mapa con las teclas <code>WASD</code> / Flechas o haz clic directamente sobre cualquier estación.
+          </p>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div class="bg-slate-950 border border-cyan-500/30 rounded-xl p-3.5">
+            <h4 class="font-bold text-cyan-300 mb-1.5 font-mono">1. Regla Básica de Derivadas</h4>
+            <p class="text-xs text-slate-400 mb-2">
+              Mide la velocidad de cambio o sensibilidad instantánea. Para derivar una potencia $x^n$, baja el exponente $n$ y réstale 1:
+            </p>
+            <div class="bg-slate-900 p-2 rounded-lg font-mono text-xs text-cyan-200 text-center">
+              Si f(x) = a·xⁿ  ⇒  f'(x) = n·a·xⁿ⁻¹
+            </div>
+            <p class="text-[11px] text-slate-400 mt-1.5">
+              Ejemplo: La derivada de $3t^2 + 4t + 1$ es $6t + 4$ (la derivada de una constante sola es $0$).
+            </p>
+          </div>
+
+          <div class="bg-slate-950 border border-emerald-500/30 rounded-xl p-3.5">
+            <h4 class="font-bold text-emerald-300 mb-1.5 font-mono">2. Regla Básica de Integrales</h4>
+            <p class="text-xs text-slate-400 mb-2">
+              Acumula trabajo mecánico, desplazamiento de cable o dosis sensorial. Suma 1 al exponente y divide por ese mismo número:
+            </p>
+            <div class="bg-slate-900 p-2 rounded-lg font-mono text-xs text-emerald-200 text-center">
+              ∫ xⁿ dx = (xⁿ⁺¹) / (n + 1)
+            </div>
+            <p class="text-[11px] text-slate-400 mt-1.5">
+              Ejemplo: $\int_0^3 2\theta d\theta = [\theta^2]_0^3 = 3^2 - 0^2 = 9$.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-5 text-right">
+        <button onclick="closeHelpModal()" class="px-5 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs sm:text-sm transition">
+          ¡Entendido, volver al laboratorio!
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================================================================
+       MODAL 4: RESET CONFIRMATION MODAL (NO NATIVE CONFIRM/ALERT)
+       ========================================================================= -->
+  <div id="resetModal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm hidden items-center justify-center p-4">
+    <div class="bg-slate-900 border border-rose-500/40 rounded-2xl max-w-md w-full p-5 shadow-2xl text-center">
+      <div class="w-12 h-12 rounded-2xl bg-rose-500/20 border border-rose-500/40 text-rose-400 flex items-center justify-center mx-auto mb-3">
+        <i class="fa-solid fa-triangle-exclamation text-xl"></i>
+      </div>
+      <h3 class="text-lg font-bold text-white mb-1">¿Reiniciar el Laboratorio?</h3>
+      <p class="text-xs sm:text-sm text-slate-400 mb-5">
+        Se reiniciarán los 6 materiales recolectados para que puedas volver a resolver las derivadas e integrales desde cero.
+      </p>
+      <div class="flex items-center justify-center gap-3">
+        <button onclick="closeResetModal()" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs sm:text-sm font-semibold transition">
+          Cancelar
+        </button>
+        <button onclick="confirmResetGame()" class="px-4 py-2 rounded-xl bg-rose-500 hover:bg-rose-400 text-white text-xs sm:text-sm font-bold transition">
+          Sí, Reiniciar Misión
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================================================================
+       APPLICATION JAVASCRIPT: GAME ENGINE, MATH CHALLENGES, AUDIO & SIMULATOR
+       ========================================================================= -->
+  <script>
+    // -------------------------------------------------------------------------
+    // 1. WEB AUDIO SYNTHESIZER (NO EXTERNAL SOUND FILES NEEDED)
+    // -------------------------------------------------------------------------
+    let audioCtx = null;
+    let soundEnabled = true;
+
+    function initAudio() {
+      if (!audioCtx) {
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        if (AudioContextClass) {
+          audioCtx = new AudioContextClass();
+        }
+      }
+      if (audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+    }
+
+    function toggleSound() {
+      soundEnabled = !soundEnabled;
+      const icon = document.getElementById('soundIcon');
+      const btn = document.getElementById('btnSoundToggle');
+      if (soundEnabled) {
+        icon.className = 'fa-solid fa-volume-high';
+        btn.classList.replace('text-slate-500', 'text-emerald-400');
+        playSound('click');
+      } else {
+        icon.className = 'fa-solid fa-volume-xmark';
+        btn.classList.replace('text-emerald-400', 'text-slate-500');
+      }
+    }
+
+    function playSound(type) {
+      if (!soundEnabled) return;
+      try {
+        initAudio();
+        if (!audioCtx) return;
+
+        const now = audioCtx.currentTime;
+
+        if (type === 'click') {
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(520, now);
+          osc.frequency.exponentialRampToValueAtTime(680, now + 0.06);
+          gain.gain.setValueAtTime(0.08, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start(now);
+          osc.stop(now + 0.06);
+        } else if (type === 'success') {
+          const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+          notes.forEach((freq, idx) => {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(freq, now + idx * 0.07);
+            gain.gain.setValueAtTime(0.12, now + idx * 0.07);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.07 + 0.22);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start(now + idx * 0.07);
+            osc.stop(now + idx * 0.07 + 0.22);
+          });
+        } else if (type === 'error') {
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(190, now);
+          osc.frequency.linearRampToValueAtTime(130, now + 0.22);
+          gain.gain.setValueAtTime(0.09, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start(now);
+          osc.stop(now + 0.22);
+        } else if (type === 'haptic250') {
+          // Real 250 Hz Pacinian corpuscle stimulation tone
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = 'square';
+          osc.frequency.setValueAtTime(250, now);
+          gain.gain.setValueAtTime(0.07, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.28);
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start(now);
+          osc.stop(now + 0.28);
+        } else if (type === 'fanfare') {
+          const chord = [440, 554.37, 659.25, 880, 1108.73];
+          chord.forEach((freq, idx) => {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(freq, now + idx * 0.09);
+            gain.gain.setValueAtTime(0.14, now + idx * 0.09);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.09 + 0.45);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start(now + idx * 0.09);
+            osc.stop(now + idx * 0.09 + 0.45);
+          });
+        }
+      } catch (e) {
+        // Ignore audio context errors on restricted autoplay
+      }
+    }
+
+    // -------------------------------------------------------------------------
+    // 2. THE 6 MANDATORY MATERIALS & EASY CALCULUS CHALLENGES DATASET
+    // -------------------------------------------------------------------------
+    const MATERIALS_DATA = [
+      {
+        id: 'cables',
+        number: 1,
+        name: 'Cables',
+        shortDesc: 'Cables Dupont y Funda Bowden PTFE',
+        calcType: 'Cálculo Integral',
+        badgeColor: 'cyan',
+        // normalized coordinates on the 2D lab canvas (0.0 to 1.0)
+        mapX: 0.18,
+        mapY: 0.24,
+        stationLabel: 'Estación 1: Transmisión y Cableado',
+        biomedContext: 'Los cables cumplen una doble misión en el prototipo: los cables eléctricos Dupont llevan las señales entre los rieles de 5V/3.3V/GND en la protoboard, mientras que las fundas tipo Bowden (PTFE de 2 mm) guían el acortamiento lineal s del cable al flectar la articulación según la integral de trayectoria.',
+        question: 'Si el radio efectivo de curvatura articular sigue la función r(θ) = 2θ (en mm/rad), calcula el acortamiento total del cable s integrando entre θ = 0 y θ = 3 radianes:',
+        formulaDisplay: 's = ∫₀³ (2θ) dθ',
+        hintSteps: [
+          'Paso 1: Recordamos la regla de integración de potencias: ∫ θ¹ dθ = θ² / 2.',
+          'Paso 2: Multiplicamos por la constante 2 que acompaña a θ: 2 · (θ² / 2) = θ².',
+          'Paso 3: Evaluamos la función primitiva [θ²] entre los límites 0 y 3: (3)² - (0)² = 9 - 0 = 9 mm.'
+        ],
+        options: [
+          { label: 's = 9 mm  (Primitiva: θ²)', value: 9, correct: true },
+          { label: 's = 6 mm  (Primitiva: 2θ)', value: 6, correct: false },
+          { label: 's = 3 mm  (Primitiva: θ)', value: 3, correct: false },
+          { label: 's = 12 mm (Primitiva: 4θ)', value: 12, correct: false }
+        ],
+        correctNumeric: 9,
+        svgIcon: `
+          <svg viewBox="0 0 64 64" class="w-9 h-9">
+            <path d="M12 44 C20 20, 44 44, 52 20" fill="none" stroke="#06b6d4" stroke-width="4" stroke-linecap="round"/>
+            <path d="M12 34 C24 14, 40 50, 52 30" fill="none" stroke="#f43f5e" stroke-width="3.5" stroke-linecap="round"/>
+            <path d="M12 52 C26 32, 38 54, 52 40" fill="none" stroke="#fbbf24" stroke-width="3" stroke-linecap="round"/>
+            <rect x="6" y="40" width="8" height="14" rx="2" fill="#334155" stroke="#94a3b8" stroke-width="1.5"/>
+            <rect x="50" y="16" width="8" height="14" rx="2" fill="#334155" stroke="#94a3b8" stroke-width="1.5"/>
+          </svg>
+        `
+      },
+      {
+        id: 'piezo',
+        number: 2,
+        name: 'Sensores Piezo',
+        shortDesc: 'Discos Piezoeléctricos de 12 mm (Tacto + Vibración)',
+        calcType: 'Cálculo Diferencial',
+        badgeColor: 'emerald',
+        mapX: 0.50,
+        mapY: 0.19,
+        stationLabel: 'Estación 2: Sensórica Táctil y Háptica',
+        biomedContext: 'Los 5 discos piezoeléctricos de 12 mm en las yemas de los dedos (protegidos con resistencias de 10 kΩ en paralelo a GND) son reversibles: al deformarse por un toque externo generan un voltaje V(x) y, al inyectarles una señal PWM de 250 Hz, vibran estimulando los corpúsculos de Pacini.',
+        question: 'El voltaje generado respecto a la deformación mecánica x (en mm) es V(x) = 10x - 3x². Halla la derivada de sensibilidad dinámica S(x) = dV/dx y calcula su valor cuando x = 1 mm:',
+        formulaDisplay: 'V(x) = 10x - 3x²   ⇒   S(x) = dV / dx  (en x = 1)',
+        hintSteps: [
+          'Paso 1: Derivamos término a término respecto a x aplicando la regla de la potencia.',
+          'Paso 2: La derivada de 10x es 10. La derivada de -3x² es -3 · (2x) = -6x.',
+          'Paso 3: Obtenemos S(x) = 10 - 6x. Reemplazando x = 1: S(1) = 10 - 6(1) = 4 V/mm.'
+        ],
+        options: [
+          { label: 'S(x) = 10 - 6x  ⇒  Valor = 4 V/mm', value: 4, correct: true },
+          { label: 'S(x) = 10 - 3x  ⇒  Valor = 7 V/mm', value: 7, correct: false },
+          { label: 'S(x) = 10x - 6  ⇒  Valor = 16 V/mm', value: 16, correct: false },
+          { label: 'S(x) = 5x² - x³ ⇒  Valor = 2 V/mm', value: 2, correct: false }
+        ],
+        correctNumeric: 4,
+        svgIcon: `
+          <svg viewBox="0 0 64 64" class="w-9 h-9">
+            <circle cx="32" cy="30" r="20" fill="#fbbf24" stroke="#d97706" stroke-width="2.5"/>
+            <circle cx="32" cy="30" r="12" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5"/>
+            <path d="M26 30 L14 56" stroke="#ef4444" stroke-width="3" stroke-linecap="round"/>
+            <path d="M42 44 L36 58" stroke="#1e293b" stroke-width="3" stroke-linecap="round"/>
+            <path d="M12 18 Q8 30 12 42" fill="none" stroke="#10b981" stroke-width="2" stroke-dasharray="2,2"/>
+            <path d="M52 18 Q56 30 52 42" fill="none" stroke="#10b981" stroke-width="2" stroke-dasharray="2,2"/>
+          </svg>
+        `
+      },
+      {
+        id: 'hilo',
+        number: 3,
+        name: 'Hilo',
+        shortDesc: 'Hilo Trenzado UHMWPE (Tendones Artificiales)',
+        calcType: 'Cálculo Diferencial',
+        badgeColor: 'cyan',
+        mapX: 0.82,
+        mapY: 0.24,
+        stationLabel: 'Estación 3: Biomateriales Tendinosos',
+        biomedContext: 'El hilo trenzado de Polietileno de Ultra Alto Peso Molecular (UHMWPE de 100 lb) actúa como un tendón artificial que transmite la tracción remota desde el antebrazo hasta las falanges. Calcular la derivada temporal de la fuerza (RFD) evita tirones bruscos y protege los tejidos del paciente.',
+        question: 'Si durante la rampa de tracción la tensión del hilo sigue la función T(t) = 4t² + 5t (en Newtons), ¿cuál es la velocidad de desarrollo de fuerza RFD = dT/dt en el instante t = 2 segundos?',
+        formulaDisplay: 'T(t) = 4t² + 5t   ⇒   RFD(t) = dT / dt  (en t = 2 s)',
+        hintSteps: [
+          'Paso 1: Derivamos T(t) = 4t² + 5t respecto al tiempo t.',
+          'Paso 2: La derivada de 4t² es 4 · (2t) = 8t. La derivada de 5t es 5. Así, dT/dt = 8t + 5.',
+          'Paso 3: Evaluamos en t = 2 segundos: RFD(2) = 8(2) + 5 = 16 + 5 = 21 N/s.'
+        ],
+        options: [
+          { label: 'dT/dt = 8t + 5  ⇒  Valor = 21 N/s', value: 21, correct: true },
+          { label: 'dT/dt = 4t + 5  ⇒  Valor = 13 N/s', value: 13, correct: false },
+          { label: 'dT/dt = 8t      ⇒  Valor = 16 N/s', value: 16, correct: false },
+          { label: 'dT/dt = 2t + 5  ⇒  Valor = 9 N/s', value: 9, correct: false }
+        ],
+        correctNumeric: 21,
+        svgIcon: `
+          <svg viewBox="0 0 64 64" class="w-9 h-9">
+            <rect x="18" y="12" width="28" height="40" rx="4" fill="#0f172a" stroke="#10b981" stroke-width="2"/>
+            <line x1="14" y1="12" x2="50" y2="12" stroke="#34d399" stroke-width="4" stroke-linecap="round"/>
+            <line x1="14" y1="52" x2="50" y2="52" stroke="#34d399" stroke-width="4" stroke-linecap="round"/>
+            <line x1="20" y1="22" x2="44" y2="22" stroke="#10b981" stroke-width="2.5"/>
+            <line x1="20" y1="30" x2="44" y2="30" stroke="#10b981" stroke-width="2.5"/>
+            <line x1="20" y1="38" x2="44" y2="38" stroke="#10b981" stroke-width="2.5"/>
+            <path d="M44 30 Q56 28 58 16" fill="none" stroke="#34d399" stroke-width="2.5" stroke-linecap="round"/>
+          </svg>
+        `
+      },
+      {
+        id: 'servo',
+        number: 4,
+        name: 'Servomotor de Alto Torque',
+        shortDesc: 'Actuador MG996R Engranajes Metálicos',
+        calcType: 'Cálculo Integral',
+        badgeColor: 'amber',
+        mapX: 0.18,
+        mapY: 0.76,
+        stationLabel: 'Estación 4: Actuación Mecánica y Torque',
+        biomedContext: 'El servomotor de alto torque MG996R (conectado al pin PWM GPIO 7 y alimentado a 5V) hace girar la polea central para asistir la flexo-extensión de los dedos. El trabajo mecánico total W entregado a la articulación se obtiene integrando el torque respecto al ángulo.',
+        question: 'Si el torque asistido en función del ángulo articular es τ(θ) = 6θ + 2, calcula el trabajo mecánico acumulado W al girar desde θ = 0 hasta θ = 2 radianes:',
+        formulaDisplay: 'W = ∫₀² (6θ + 2) dθ',
+        hintSteps: [
+          'Paso 1: Integramos término a término: la integral de 6θ es 6 · (θ² / 2) = 3θ².',
+          'Paso 2: La integral de la constante 2 es 2θ. La función primitiva queda: [3θ² + 2θ].',
+          'Paso 3: Evaluamos en θ = 2 y restamos en θ = 0: 3(2)² + 2(2) = 3(4) + 4 = 12 + 4 = 16 Joules.'
+        ],
+        options: [
+          { label: 'W = 16 J  (Primitiva: 3θ² + 2θ)', value: 16, correct: true },
+          { label: 'W = 14 J  (Primitiva: 6θ + 2)', value: 14, correct: false },
+          { label: 'W = 12 J  (Primitiva: 3θ²)', value: 12, correct: false },
+          { label: 'W = 8 J   (Primitiva: 2θ²)', value: 8, correct: false }
+        ],
+        correctNumeric: 16,
+        svgIcon: `
+          <svg viewBox="0 0 64 64" class="w-9 h-9">
+            <rect x="14" y="20" width="36" height="32" rx="4" fill="#1e293b" stroke="#f59e0b" stroke-width="2.5"/>
+            <rect x="8" y="28" width="6" height="6" rx="1" fill="#64748b"/>
+            <rect x="50" y="28" width="6" height="6" rx="1" fill="#64748b"/>
+            <circle cx="32" cy="20" r="10" fill="#fbbf24" stroke="#b45309" stroke-width="2"/>
+            <line x1="20" y1="20" x2="44" y2="20" stroke="#fef08a" stroke-width="4" stroke-linecap="round"/>
+            <circle cx="32" cy="20" r="3" fill="#1e293b"/>
+          </svg>
+        `
+      },
+      {
+        id: 'giroscopio',
+        number: 5,
+        name: 'Giroscopio',
+        shortDesc: 'Sensor Angular IMU / Cinemática Articular',
+        calcType: 'Cálculo Diferencial',
+        badgeColor: 'violet',
+        mapX: 0.50,
+        mapY: 0.81,
+        stationLabel: 'Estación 5: Cinemática e Inercia Angular',
+        biomedContext: 'El giroscopio (unidad inercial IMU / sensor angular en GPIO 4) mide en tiempo real la inclinación y el ángulo articular θ(t). Cuando la primera derivada detecta movimiento angular ω(t) > 0, dispara simultáneamente el servomotor y el relé del electroestimulador FES.',
+        question: 'Si la posición angular de la articulación está dada por θ(t) = 3t² + 4t + 1 (en rad), determina la velocidad angular instantánea ω(t) = dθ/dt en t = 3 segundos:',
+        formulaDisplay: 'θ(t) = 3t² + 4t + 1   ⇒   ω(t) = dθ / dt  (en t = 3 s)',
+        hintSteps: [
+          'Paso 1: Derivamos cada término respecto al tiempo t: la derivada de 3t² es 3 · (2t) = 6t.',
+          'Paso 2: La derivada de 4t es 4, y la derivada de la constante 1 es 0. Queda ω(t) = 6t + 4.',
+          'Paso 3: Sustituimos t = 3 segundos: ω(3) = 6(3) + 4 = 18 + 4 = 22 rad/s.'
+        ],
+        options: [
+          { label: 'ω(t) = 6t + 4  ⇒  Valor = 22 rad/s', value: 22, correct: true },
+          { label: 'ω(t) = 3t + 4  ⇒  Valor = 13 rad/s', value: 13, correct: false },
+          { label: 'ω(t) = 6t + 1  ⇒  Valor = 19 rad/s', value: 19, correct: false },
+          { label: 'ω(t) = 9t²     ⇒  Valor = 27 rad/s', value: 27, correct: false }
+        ],
+        correctNumeric: 22,
+        svgIcon: `
+          <svg viewBox="0 0 64 64" class="w-9 h-9">
+            <ellipse cx="32" cy="32" rx="24" ry="10" fill="none" stroke="#8b5cf6" stroke-width="2.5" transform="rotate(-25 32 32)"/>
+            <ellipse cx="32" cy="32" rx="24" ry="10" fill="none" stroke="#06b6d4" stroke-width="2.5" transform="rotate(35 32 32)"/>
+            <circle cx="32" cy="32" r="7" fill="#a78bfa" stroke="#f8fafc" stroke-width="1.5"/>
+            <line x1="32" y1="8" x2="32" y2="56" stroke="#10b981" stroke-width="1.5" stroke-dasharray="3,3"/>
+          </svg>
+        `
+      },
+      {
+        id: 'esp32',
+        number: 6,
+        name: 'ESP32-S3',
+        shortDesc: 'Microcontrolador Central WROOM (Bucle Cerrado)',
+        calcType: 'Cálculo Integral',
+        badgeColor: 'emerald',
+        mapX: 0.82,
+        mapY: 0.76,
+        stationLabel: 'Estación 6: Procesamiento y Control Central',
+        biomedContext: 'La placa ESP32-S3 procesa en milisegundos las señales analógicas (ADC de 12 bits: 0 a 4095) de los sensores piezoeléctricos y del giroscopio, y calcula la integral de dosis sensorial acumulada D para evitar la habituación de los mecanorreceptores del paciente.',
+        question: 'Si la amplitud modulada de estimulación sigue la curva A(t) = 3t², calcula la dosis sensorial acumulada D integrando desde t = 0 hasta t = 2 segundos:',
+        formulaDisplay: 'D = ∫₀² (3t²) dt',
+        hintSteps: [
+          'Paso 1: Aplicamos la regla de integración de potencias a 3t²: ∫ 3t² dt = 3 · (t³ / 3).',
+          'Paso 2: Simplificamos el 3 del numerador con el 3 del denominador, obteniendo la primitiva [t³].',
+          'Paso 3: Evaluamos entre t = 0 y t = 2: (2)³ - (0)³ = 8 - 0 = 8 V·s.'
+        ],
+        options: [
+          { label: 'D = 8 V·s   (Primitiva: t³)', value: 8, correct: true },
+          { label: 'D = 6 V·s   (Primitiva: 3t)', value: 6, correct: false },
+          { label: 'D = 12 V·s  (Primitiva: 3t²)', value: 12, correct: false },
+          { label: 'D = 4 V·s   (Primitiva: t²)', value: 4, correct: false }
+        ],
+        correctNumeric: 8,
+        svgIcon: `
+          <svg viewBox="0 0 64 64" class="w-9 h-9">
+            <rect x="14" y="10" width="36" height="44" rx="4" fill="#0f172a" stroke="#10b981" stroke-width="2.5"/>
+            <rect x="20" y="16" width="24" height="18" rx="2" fill="#334155" stroke="#94a3b8" stroke-width="1.5"/>
+            <line x1="8" y1="18" x2="14" y2="18" stroke="#fbbf24" stroke-width="2.5"/>
+            <line x1="8" y1="26" x2="14" y2="26" stroke="#fbbf24" stroke-width="2.5"/>
+            <line x1="8" y1="34" x2="14" y2="34" stroke="#fbbf24" stroke-width="2.5"/>
+            <line x1="8" y1="42" x2="14" y2="42" stroke="#fbbf24" stroke-width="2.5"/>
+            <line x1="50" y1="18" x2="56" y2="18" stroke="#fbbf24" stroke-width="2.5"/>
+            <line x1="50" y1="26" x2="56" y2="26" stroke="#fbbf24" stroke-width="2.5"/>
+            <line x1="50" y1="34" x2="56" y2="34" stroke="#fbbf24" stroke-width="2.5"/>
+            <line x1="50" y1="42" x2="56" y2="42" stroke="#fbbf24" stroke-width="2.5"/>
+            <rect x="26" y="48" width="12" height="6" rx="1" fill="#64748b"/>
+          </svg>
+        `
+      }
+    ];
+
+    // -------------------------------------------------------------------------
+    // 3. GAME STATE & PLAYER AVATAR STATE
+    // -------------------------------------------------------------------------
+    const state = {
+      collectedIds: new Set(),
+      integratedIds: new Set(),
+      activeStationId: null,
+      attempts: 0,
+      correctCount: 0,
+      player: {
+        x: 0.50, // normalized 0..1
+        y: 0.50,
+        targetX: null,
+        targetY: null,
+        speed: 0.0065,
+        radius: 18,
+        facing: 'down',
+        walkFrame: 0
+      },
+      keys: {
+        up: false,
+        down: false,
+        left: false,
+        right: false
+      },
+      nearStation: null,
+      nearCenterBench: false,
+      celebrationShown: false
+    };
+
+    // -------------------------------------------------------------------------
+    // 4. RENDER INVENTORY BAR & QUICK STATION LIST
+    // -------------------------------------------------------------------------
+    function renderUI() {
+      const collectedCount = state.collectedIds.size;
+      const total = MATERIALS_DATA.length;
+      const pct = Math.round((collectedCount / total) * 100);
+
+      // Update Header Progress
+      document.getElementById('headerProgressText').textContent = `${collectedCount}/${total}`;
+      document.getElementById('headerProgressBar').style.width = `${pct}%`;
+
+      // Accuracy Counter
+      const acc = state.attempts === 0 ? 100 : Math.round((state.correctCount / state.attempts) * 100);
+      document.getElementById('scoreCounter').textContent = `Precisión: ${acc}%`;
+
+      // Update Top & Sidebar Assembly Buttons
+      const btnTop = document.getElementById('btnOpenSimulatorTop');
+      const badgeTop = document.getElementById('assemblyBadge');
+      const btnSide = document.getElementById('btnSidebarAssembly');
+      const btnSideText = document.getElementById('btnSidebarAssemblyText');
+      const invHint = document.getElementById('inventoryStatusHint');
+
+      if (collectedCount === total) {
+        badgeTop.textContent = '¡DESBLOQUEADO!';
+        badgeTop.className = 'px-2 py-0.5 rounded text-[10px] bg-emerald-400 text-slate-950 font-extrabold animate-pulse';
+        btnTop.className = 'px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-1.5 bg-gradient-to-r from-violet-600 to-cyan-500 text-white shadow-lg shadow-cyan-500/25';
+
+        btnSide.className = 'w-full py-3 px-4 rounded-xl font-extrabold text-sm flex items-center justify-center gap-2 transition-all bg-gradient-to-r from-emerald-400 via-cyan-400 to-violet-500 text-slate-950 shadow-lg shadow-emerald-500/25 hover:scale-[1.02]';
+        btnSideText.textContent = '¡Ensamblar y Probar Prototipo (6/6)!';
+        invHint.textContent = '🎉 ¡Todos los materiales listos! Abre la Mesa de Ensamblaje';
+        invHint.className = 'text-xs text-emerald-400 font-mono font-bold';
+      } else {
+        badgeTop.textContent = `${collectedCount}/6`;
+        badgeTop.className = 'px-1.5 py-0.5 rounded text-[10px] bg-slate-700 text-slate-300 font-mono';
+        btnTop.className = 'px-3 py-1.5 rounded-xl text-xs sm:text-sm font-semibold transition-all flex items-center gap-1.5 bg-slate-800/80 hover:bg-slate-700 text-slate-300 border border-slate-700';
+
+        btnSide.className = 'w-full py-3 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700';
+        btnSideText.textContent = `Mesa de Ensamblaje (${collectedCount}/6 recolectados)`;
+        invHint.textContent = `Faltan ${total - collectedCount} material(es) por recolectar`;
+        invHint.className = 'text-xs text-cyan-400 font-mono';
+      }
+
+      // Render 6 Inventory Cards
+      const invGrid = document.getElementById('inventoryGrid');
+      invGrid.innerHTML = MATERIALS_DATA.map(mat => {
+        const isCollected = state.collectedIds.has(mat.id);
+        return `
+          <button onclick="selectStationById('${mat.id}')" class="group text-left p-2.5 rounded-xl border transition-all flex items-center gap-2.5 relative overflow-hidden ${
+            isCollected
+              ? 'bg-emerald-950/30 border-emerald-500/50 glow-neon'
+              : 'bg-slate-950/70 border-slate-800 hover:border-cyan-500/50'
+          }">
+            <div class="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 ${
+              isCollected ? 'bg-emerald-500/20 border border-emerald-500/40' : 'bg-slate-900 border border-slate-700 opacity-75 group-hover:opacity-100'
+            }">
+              ${mat.svgIcon}
+            </div>
+            <div class="min-w-0 flex-1">
+              <div class="flex items-center justify-between gap-1">
+                <span class="text-[10px] font-mono uppercase tracking-wider ${
+                  isCollected ? 'text-emerald-400 font-bold' : 'text-slate-400'
+                }">
+                  ${isCollected ? '✓ Listo' : `Est. #${mat.number}`}
+                </span>
+              </div>
+              <p class="text-xs sm:text-sm font-bold text-white truncate">${mat.name}</p>
+              <p class="text-[10px] text-slate-400 truncate">${mat.calcType}</p>
+            </div>
+          </button>
+        `;
+      }).join('');
+
+      // Render Sidebar Quick-Access Station List
+      const quickList = document.getElementById('stationQuickList');
+      quickList.innerHTML = MATERIALS_DATA.map(mat => {
+        const isCollected = state.collectedIds.has(mat.id);
+        return `
+          <div onclick="selectStationById('${mat.id}')" class="cursor-pointer p-2.5 rounded-xl border transition-all flex items-center justify-between gap-2 ${
+            isCollected
+              ? 'bg-emerald-950/25 border-emerald-500/40 hover:bg-emerald-950/40'
+              : 'bg-slate-950/80 border-slate-800 hover:border-cyan-500/50 hover:bg-slate-900'
+          }">
+            <div class="flex items-center gap-2.5 min-w-0">
+              <div class="w-8 h-8 rounded-lg bg-slate-900 border border-slate-700 flex items-center justify-center shrink-0">
+                <span class="text-xs font-mono font-bold ${isCollected ? 'text-emerald-400' : 'text-cyan-400'}">#${mat.number}</span>
+              </div>
+              <div class="min-w-0">
+                <p class="text-xs font-bold text-white truncate">${mat.name}</p>
+                <p class="text-[11px] text-slate-400 truncate font-mono">${mat.formulaDisplay.split('⇒')[0]}</p>
+              </div>
+            </div>
+            <span class="px-2.5 py-1 rounded-lg text-[11px] font-bold shrink-0 ${
+              isCollected
+                ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                : 'bg-cyan-500/15 text-cyan-300 border border-cyan-500/30'
+            }">
+              ${isCollected ? 'Recolectado' : 'Resolver'}
+            </span>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // -------------------------------------------------------------------------
+    // 5. INTERACTIVE 2D BIOMEDICAL LAB CANVAS ENGINE
+    // -------------------------------------------------------------------------
+    const canvas = document.getElementById('labCanvas');
+    const ctx = canvas.getContext('2d');
+    let animFrameTime = 0;
+
+    function resizeCanvas() {
+      const container = document.getElementById('canvasContainer');
+      if (!container) return;
+      const rect = container.getBoundingClientRect();
+      canvas.width = rect.width;
+      canvas.height = rect.height;
+    }
+
+    window.addEventListener('resize', resizeCanvas);
+
+    // Move Player Avatar towards target or via keyboard/D-Pad
+    function updatePlayerPhysics() {
+      let dx = 0;
+      let dy = 0;
+
+      if (state.keys.up) dy -= 1;
+      if (state.keys.down) dy += 1;
+      if (state.keys.left) dx -= 1;
+      if (state.keys.right) dx += 1;
+
+      if (dx !== 0 || dy !== 0) {
+        // Cancel point-and-click target if user presses manual directional keys
+        state.player.targetX = null;
+        state.player.targetY = null;
+        const len = Math.hypot(dx, dy);
+        state.player.x += (dx / len) * state.player.speed;
+        state.player.y += (dy / len) * state.player.speed;
+        state.player.walkFrame += 0.25;
+      } else if (state.player.targetX !== null && state.player.targetY !== null) {
+        const tdx = state.player.targetX - state.player.x;
+        const tdy = state.player.targetY - state.player.y;
+        const dist = Math.hypot(tdx, tdy);
+        if (dist > 0.012) {
+          state.player.x += (tdx / dist) * (state.player.speed * 1.35);
+          state.player.y += (tdy / dist) * (state.player.speed * 1.35);
+          state.player.walkFrame += 0.28;
+        } else {
+          state.player.targetX = null;
+          state.player.targetY = null;
+        }
+      }
+
+      // Clamp inside laboratory walls
+      state.player.x = Math.max(0.07, Math.min(0.93, state.player.x));
+      state.player.y = Math.max(0.10, Math.min(0.90, state.player.y));
+
+      // Check proximity to any of the 6 stations
+      let closestStation = null;
+      let minDist = 0.11;
+
+      for (const mat of MATERIALS_DATA) {
+        const d = Math.hypot(state.player.x - mat.mapX, state.player.y - mat.mapY);
+        if (d < minDist) {
+          minDist = d;
+          closestStation = mat;
+        }
+      }
+
+      state.nearStation = closestStation;
+      const distCenter = Math.hypot(state.player.x - 0.50, state.player.y - 0.50);
+      state.nearCenterBench = distCenter < 0.12;
+
+      // Update Floating Proximity Prompt Banner
+      const banner = document.getElementById('proximityBanner');
+      const btnText = document.getElementById('proximityText');
+      const btnAction = document.getElementById('btnProximityAction');
+
+      if (state.nearStation) {
+        banner.classList.remove('hidden');
+        const isDone = state.collectedIds.has(state.nearStation.id);
+        btnText.textContent = isDone
+          ? `Ver ${state.nearStation.name} (Recolectado)`
+          : `Resolver Reto: ${state.nearStation.name}`;
+        btnAction.onclick = () => openChallengeModal(state.nearStation.id);
+      } else if (state.nearCenterBench) {
+        banner.classList.remove('hidden');
+        btnText.textContent = `Abrir Mesa Central de Ensamblaje (${state.collectedIds.size}/6)`;
+        btnAction.onclick = () => openAssemblyModal();
+      } else {
+        banner.classList.add('hidden');
+      }
+    }
+
+    function drawLaboratoryMap() {
+      const w = canvas.width;
+      const h = canvas.height;
+      if (w === 0 || h === 0) return;
+
+      animFrameTime += 0.035;
+      ctx.clearRect(0, 0, w, h);
+
+      // 1. Lab Floor Grid
+      ctx.strokeStyle = 'rgba(30, 41, 59, 0.55)';
+      ctx.lineWidth = 1;
+      const gridStep = 36;
+      for (let x = 0; x < w; x += gridStep) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, h);
+        ctx.stroke();
+      }
+      for (let y = 0; y < h; y += gridStep) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(w, y);
+        ctx.stroke();
+      }
+
+      // 2. Circuit Traces Connecting Stations to Central Assembly Workbench
+      const centerX = w * 0.50;
+      const centerY = h * 0.50;
+
+      MATERIALS_DATA.forEach(mat => {
+        const sx = w * mat.mapX;
+        const sy = h * mat.mapY;
+        const isCollected = state.collectedIds.has(mat.id);
+
+        ctx.save();
+        ctx.beginPath();
+        ctx.moveTo(sx, sy);
+        ctx.lineTo(centerX, centerY);
+        ctx.strokeStyle = isCollected ? 'rgba(16, 185, 129, 0.55)' : 'rgba(6, 182, 212, 0.18)';
+        ctx.lineWidth = isCollected ? 3 : 1.5;
+        if (!isCollected) {
+          ctx.setLineDash([6, 6]);
+        }
+        ctx.stroke();
+        ctx.restore();
+      });
+
+      // 3. Draw Central Assembly Workbench ("Mesa de Ensamblaje")
+      const allCollected = state.collectedIds.size === MATERIALS_DATA.length;
+      ctx.save();
+      ctx.translate(centerX, centerY);
+
+      // Glowing Aura
+      const pulseRadius = 46 + Math.sin(animFrameTime * 2) * 5;
+      const gradCenter = ctx.createRadialGradient(0, 0, 12, 0, 0, pulseRadius);
+      if (allCollected) {
+        gradCenter.addColorStop(0, 'rgba(16, 185, 129, 0.45)');
+        gradCenter.addColorStop(1, 'rgba(16, 185, 129, 0)');
+      } else {
+        gradCenter.addColorStop(0, 'rgba(139, 92, 246, 0.35)');
+        gradCenter.addColorStop(1, 'rgba(139, 92, 246, 0)');
+      }
+      ctx.fillStyle = gradCenter;
+      ctx.beginPath();
+      ctx.arc(0, 0, pulseRadius, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Hexagonal / Rounded Bench Platform
+      ctx.fillStyle = '#0f172a';
+      ctx.strokeStyle = allCollected ? '#10b981' : '#8b5cf6';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.roundRect(-58, -32, 116, 64, 14);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.fillStyle = allCollected ? '#34d399' : '#c4b5fd';
+      ctx.font = 'bold 11px Inter, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('MESA CENTRAL', 0, -8);
+
+      ctx.fillStyle = '#f8fafc';
+      ctx.font = 'bold 11px JetBrains Mono, monospace';
+      ctx.fillText(allCollected ? '¡LISTO! (6/6)' : `PROTOTIPO (${state.collectedIds.size}/6)`, 0, 8);
+
+      ctx.fillStyle = '#94a3b8';
+      ctx.font = '9.5px Inter, sans-serif';
+      ctx.fillText('Clic para abrir simulador', 0, 22);
+      ctx.restore();
+
+      // 4. Draw the 6 Material Stations
+      MATERIALS_DATA.forEach(mat => {
+        const sx = w * mat.mapX;
+        const sy = h * mat.mapY;
+        const isCollected = state.collectedIds.has(mat.id);
+        const isNear = state.nearStation && state.nearStation.id === mat.id;
+
+        ctx.save();
+        ctx.translate(sx, sy);
+
+        // Outer Pulse Ring
+        const ringR = 34 + Math.sin(animFrameTime * 2 + mat.number) * 3;
+        ctx.beginPath();
+        ctx.arc(0, 0, ringR, 0, Math.PI * 2);
+        ctx.fillStyle = isCollected
+          ? 'rgba(16, 185, 129, 0.16)'
+          : isNear
+          ? 'rgba(6, 182, 212, 0.28)'
+          : 'rgba(6, 182, 212, 0.10)';
+        ctx.fill();
+
+        // Station Desk Card
+        const boxW = Math.min(130, Math.max(102, w * 0.16));
+        const boxH = 54;
+        ctx.fillStyle = isCollected ? '#062c22' : '#0f172a';
+        ctx.strokeStyle = isCollected ? '#10b981' : isNear ? '#38bdf8' : '#06b6d4';
+        ctx.lineWidth = isNear ? 3 : 2;
+        ctx.beginPath();
+        ctx.roundRect(-boxW / 2, -boxH / 2, boxW, boxH, 12);
+        ctx.fill();
+        ctx.stroke();
+
+        // Station Number Badge
+        ctx.fillStyle = isCollected ? '#10b981' : '#06b6d4';
+        ctx.font = 'bold 10px JetBrains Mono, monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText(
+          isCollected ? `✓ ESTACIÓN #${mat.number}` : `ESTACIÓN #${mat.number}`,
+          0,
+          -8
+        );
+
+        // Material Name
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 11.5px Inter, sans-serif';
+        const displayTitle = mat.name.length > 18 ? mat.name.slice(0, 16) + '…' : mat.name;
+        ctx.fillText(displayTitle, 0, 8);
+
+        // Calculus Type Sub-label
+        ctx.fillStyle = isCollected ? '#6ee7b7' : '#94a3b8';
+        ctx.font = '9.5px JetBrains Mono, monospace';
+        ctx.fillText(mat.calcType.replace('Cálculo ', ''), 0, 21);
+
+        ctx.restore();
+      });
+
+      // 5. Draw Player Avatar (Biomedical Engineer / Kinesiologist)
+      const px = w * state.player.x;
+      const py = h * state.player.y;
+      const bobOffset = Math.sin(state.player.walkFrame) * 2.5;
+
+      ctx.save();
+      ctx.translate(px, py + bobOffset);
+
+      // Shadow under avatar
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
+      ctx.beginPath();
+      ctx.ellipse(0, 17 - bobOffset, 13, 5, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Lab Coat Body
+      ctx.fillStyle = '#f8fafc';
+      ctx.strokeStyle = '#06b6d4';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.roundRect(-11, -4, 22, 18, 6);
+      ctx.fill();
+      ctx.stroke();
+
+      // Stethoscope / Biomed Cross Detail
+      ctx.strokeStyle = '#10b981';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(-4, 2);
+      ctx.lineTo(4, 2);
+      ctx.moveTo(0, -2);
+      ctx.lineTo(0, 6);
+      ctx.stroke();
+
+      // Head + Tech Visor
+      ctx.fillStyle = '#fde68a';
+      ctx.strokeStyle = '#0f172a';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.arc(0, -11, 9, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+
+      // Cyan AR Glasses Visor
+      ctx.fillStyle = '#06b6d4';
+      ctx.fillRect(-7, -14, 14, 5);
+
+      // Player Tag
+      ctx.fillStyle = '#38bdf8';
+      ctx.font = 'bold 9.5px JetBrains Mono, monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText('TÚ (BIO-KINE)', 0, -24);
+
+      ctx.restore();
+    }
+
+    function gameLoop() {
+      updatePlayerPhysics();
+      drawLaboratoryMap();
+      requestAnimationFrame(gameLoop);
+    }
+
+    // -------------------------------------------------------------------------
+    // 6. CANVAS CLICK / TOUCH & KEYBOARD CONTROLS
+    // -------------------------------------------------------------------------
+    canvas.addEventListener('pointerdown', (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const clickX = (e.clientX - rect.left) / rect.width;
+      const clickY = (e.clientY - rect.top) / rect.height;
+
+      // Check if user clicked directly on a Station
+      for (const mat of MATERIALS_DATA) {
+        const dist = Math.hypot(clickX - mat.mapX, clickY - mat.mapY);
+        if (dist < 0.11) {
+          playSound('click');
+          state.player.targetX = mat.mapX;
+          state.player.targetY = mat.mapY;
+          openChallengeModal(mat.id);
+          return;
+        }
+      }
+
+      // Check if user clicked on the Central Assembly Workbench
+      if (Math.hypot(clickX - 0.50, clickY - 0.50) < 0.12) {
+        playSound('click');
+        state.player.targetX = 0.50;
+        state.player.targetY = 0.50;
+        openAssemblyModal();
+        return;
+      }
+
+      // Otherwise walk avatar smoothly to the clicked location
+      state.player.targetX = clickX;
+      state.player.targetY = clickY;
+    });
+
+    // Keyboard Event Listeners
+    window.addEventListener('keydown', (e) => {
+      // Ignore movement keys if user is typing in the numeric input or modal is open
+      if (document.activeElement && document.activeElement.tagName === 'INPUT') {
+        if (e.key === 'Enter') {
+          submitDirectInput();
+        }
+        return;
+      }
+      const key = e.key.toLowerCase();
+      if (key === 'w' || key === 'arrowup') state.keys.up = true;
+      if (key === 's' || key === 'arrowdown') state.keys.down = true;
+      if (key === 'a' || key === 'arrowleft') state.keys.left = true;
+      if (key === 'd' || key === 'arrowright') state.keys.right = true;
+      if (key === 'e' || key === ' ') {
+        if (state.nearStation && document.getElementById('challengeModal').classList.contains('hidden')) {
+          openChallengeModal(state.nearStation.id);
+        } else if (state.nearCenterBench && document.getElementById('assemblyModal').classList.contains('hidden')) {
+          openAssemblyModal();
+        }
+      }
+    });
+
+    window.addEventListener('keyup', (e) => {
+      const key = e.key.toLowerCase();
+      if (key === 'w' || key === 'arrowup') state.keys.up = false;
+      if (key === 's' || key === 'arrowdown') state.keys.down = false;
+      if (key === 'a' || key === 'arrowleft') state.keys.left = false;
+      if (key === 'd' || key === 'arrowright') state.keys.right = false;
+    });
+
+    // Bind On-Screen Touch D-Pad
+    function bindDpadButton(btnId, dirKey) {
+      const btn = document.getElementById(btnId);
+      if (!btn) return;
+      const start = (e) => { e.preventDefault(); state.keys[dirKey] = true; };
+      const end = (e) => { e.preventDefault(); state.keys[dirKey] = false; };
+      btn.addEventListener('pointerdown', start);
+      btn.addEventListener('pointerup', end);
+      btn.addEventListener('pointerleave', end);
+      btn.addEventListener('pointercancel', end);
+    }
+
+    bindDpadButton('dpadUp', 'up');
+    bindDpadButton('dpadDown', 'down');
+    bindDpadButton('dpadLeft', 'left');
+    bindDpadButton('dpadRight', 'right');
+
+    // -------------------------------------------------------------------------
+    // 7. STATION CHALLENGE MODAL LOGIC (DERIVATIVES & INTEGRALS)
+    // -------------------------------------------------------------------------
+    function selectStationById(stationId) {
+      const mat = MATERIALS_DATA.find(m => m.id === stationId);
+      if (!mat) return;
+      playSound('click');
+      // Move avatar toward the chosen station
+      state.player.targetX = mat.mapX;
+      state.player.targetY = mat.mapY;
+      openChallengeModal(stationId);
+    }
+
+    function openChallengeModal(stationId) {
+      const mat = MATERIALS_DATA.find(m => m.id === stationId);
+      if (!mat) return;
+
+      state.activeStationId = stationId;
+
+      document.getElementById('modalMaterialIcon').innerHTML = mat.svgIcon;
+      document.getElementById('modalCalcBadge').textContent = mat.calcType;
+      document.getElementById('modalStationNumber').textContent = mat.stationLabel;
+      document.getElementById('modalMaterialTitle').textContent = mat.name;
+      document.getElementById('modalBiomedContext').textContent = mat.biomedContext;
+      document.getElementById('modalQuestionText').textContent = mat.question;
+      document.getElementById('modalFormulaBox').textContent = mat.formulaDisplay;
+
+      // Populate Step-by-Step Hint
+      const hintBox = document.getElementById('modalHintBox');
+      hintBox.classList.add('hidden');
+      document.getElementById('btnHintToggleText').textContent = '💡 Ver Pista Paso a Paso';
+      document.getElementById('modalHintSteps').innerHTML = mat.hintSteps
+        .map(step => `<p>• ${step}</p>`)
+        .join('');
+
+      // Populate Options
+      const optionsGrid = document.getElementById('modalOptionsGrid');
+      optionsGrid.innerHTML = mat.options.map((opt, idx) => `
+        <button onclick="verifyAnswer(${opt.value}, ${opt.correct}, this)" class="p-3 rounded-xl bg-slate-950 hover:bg-slate-800 border border-slate-700 hover:border-cyan-400 text-left font-mono text-xs sm:text-sm text-slate-100 transition flex items-center justify-between gap-2 group">
+          <span>${opt.label}</span>
+          <i class="fa-solid fa-chevron-right text-slate-600 group-hover:text-cyan-400 transition"></i>
+        </button>
+      `).join('');
+
+      // Reset Direct Input & Feedback Box
+      document.getElementById('directNumericInput').value = '';
+      const fbBox = document.getElementById('modalFeedbackBox');
+      fbBox.classList.add('hidden');
+      fbBox.classList.remove('flex');
+
+      // Show if already collected
+      if (state.collectedIds.has(stationId)) {
+        showModalFeedback(
+          true,
+          `¡Ya recolectaste ${mat.name}! Respuesta verificada: ${mat.correctNumeric}. Puedes repasar el cálculo o continuar.`
+        );
+      }
+
+      const modal = document.getElementById('challengeModal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    function closeChallengeModal() {
+      const modal = document.getElementById('challengeModal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+
+    function toggleHintBox() {
+      playSound('click');
+      const hintBox = document.getElementById('modalHintBox');
+      const btnText = document.getElementById('btnHintToggleText');
+      if (hintBox.classList.contains('hidden')) {
+        hintBox.classList.remove('hidden');
+        btnText.textContent = 'Ocultar Pista';
+      } else {
+        hintBox.classList.add('hidden');
+        btnText.textContent = '💡 Ver Pista Paso a Paso';
+      }
+    }
+
+    function submitDirectInput() {
+      const mat = MATERIALS_DATA.find(m => m.id === state.activeStationId);
+      if (!mat) return;
+      const valStr = document.getElementById('directNumericInput').value.trim();
+      if (valStr === '') return;
+      const numVal = parseFloat(valStr);
+      const isCorrect = Math.abs(numVal - mat.correctNumeric) < 0.01;
+      verifyAnswer(numVal, isCorrect, null);
+    }
+
+    function verifyAnswer(value, isCorrect, btnElement) {
+      const mat = MATERIALS_DATA.find(m => m.id === state.activeStationId);
+      if (!mat) return;
+
+      state.attempts++;
+
+      if (isCorrect) {
+        state.correctCount++;
+        const newlyAdded = !state.collectedIds.has(mat.id);
+        state.collectedIds.add(mat.id);
+        playSound('success');
+
+        if (btnElement) {
+          btnElement.className = 'p-3 rounded-xl bg-emerald-950/70 border-2 border-emerald-400 text-left font-mono text-xs sm:text-sm text-emerald-200 font-bold flex items-center justify-between gap-2';
+        }
+
+        showModalFeedback(
+          true,
+          `¡Correcto! Resultado = ${mat.correctNumeric}. Has añadido "${mat.name}" al inventario del prototipo.`
+        );
+        renderUI();
+
+        // Check if all 6 materials have been collected
+        if (state.collectedIds.size === MATERIALS_DATA.length && newlyAdded) {
+          setTimeout(() => {
+            playSound('fanfare');
+            launchConfetti();
+          }, 350);
+        }
+      } else {
+        playSound('error');
+        if (btnElement) {
+          btnElement.className = 'p-3 rounded-xl bg-rose-950/60 border border-rose-500 text-left font-mono text-xs sm:text-sm text-rose-200 flex items-center justify-between gap-2';
+        }
+        showModalFeedback(
+          false,
+          `Respuesta incorrecta (${value}). Revisa la "💡 Pista Paso a Paso" para ver el desarrollo algebraico.`
+        );
+        renderUI();
+      }
+    }
+
+    function showModalFeedback(isSuccess, message) {
+      const fbBox = document.getElementById('modalFeedbackBox');
+      const fbIcon = document.getElementById('modalFeedbackIcon');
+      const fbText = document.getElementById('modalFeedbackText');
+      const continueBtn = document.getElementById('modalContinueBtn');
+
+      fbBox.classList.remove('hidden');
+      fbBox.classList.add('flex');
+
+      if (isSuccess) {
+        fbBox.className = 'mt-4 p-3.5 rounded-xl text-xs sm:text-sm font-medium flex items-center justify-between gap-3 bg-emerald-950/60 border border-emerald-500/50 text-emerald-200';
+        fbIcon.className = 'fa-solid fa-circle-check text-emerald-400 text-lg shrink-0';
+        continueBtn.classList.remove('hidden');
+      } else {
+        fbBox.className = 'mt-4 p-3.5 rounded-xl text-xs sm:text-sm font-medium flex items-center justify-between gap-3 bg-rose-950/60 border border-rose-500/50 text-rose-200';
+        fbIcon.className = 'fa-solid fa-circle-xmark text-rose-400 text-lg shrink-0';
+        continueBtn.classList.add('hidden');
+      }
+
+      fbText.textContent = message;
+    }
+
+    // -------------------------------------------------------------------------
+    // 8. FINAL ASSEMBLY WORKBENCH & INTERACTIVE PROTOTYPE SIMULATOR
+    // -------------------------------------------------------------------------
+    function openAssemblyModal() {
+      playSound('click');
+      renderAssemblySlots();
+      const modal = document.getElementById('assemblyModal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    function closeAssemblyModal() {
+      const modal = document.getElementById('assemblyModal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+
+    function renderAssemblySlots() {
+      const slotsGrid = document.getElementById('assemblySlotsGrid');
+      slotsGrid.innerHTML = MATERIALS_DATA.map(mat => {
+        const isCollected = state.collectedIds.has(mat.id);
+        const isIntegrated = state.integratedIds.has(mat.id);
+
+        return `
+          <button onclick="integrateComponent('${mat.id}')" class="p-2.5 rounded-xl border text-left transition flex flex-col justify-between gap-1.5 ${
+            isIntegrated
+              ? 'bg-emerald-950/40 border-emerald-400 glow-neon'
+              : isCollected
+              ? 'bg-slate-900 border-cyan-500/50 hover:border-cyan-400'
+              : 'bg-slate-950/60 border-slate-800 opacity-60'
+          }">
+            <div class="flex items-center justify-between">
+              <span class="text-[10px] font-mono uppercase px-1.5 py-0.5 rounded ${
+                isIntegrated
+                  ? 'bg-emerald-500/20 text-emerald-300'
+                  : isCollected
+                  ? 'bg-cyan-500/20 text-cyan-300'
+                  : 'bg-slate-800 text-slate-400'
+              }">
+                ${isIntegrated ? '✓ Conectado' : isCollected ? 'Conectar' : 'Falta'}
+              </span>
+            </div>
+            <p class="text-xs font-bold text-white truncate">${mat.name}</p>
+          </button>
+        `;
+      }).join('');
+    }
+
+    function integrateComponent(id) {
+      if (!state.collectedIds.has(id)) {
+        // Take the user directly to that station challenge so they can collect it easily!
+        closeAssemblyModal();
+        openChallengeModal(id);
+        return;
+      }
+      state.integratedIds.add(id);
+      playSound('success');
+      renderAssemblySlots();
+      appendSerialLog(`[CONEXIÓN] ${MATERIALS_DATA.find(m => m.id === id).name} integrado al bus de la ESP32-S3.`);
+    }
+
+    function assembleAllInstantly() {
+      // Mark all collected or unlock simulator for demonstration
+      MATERIALS_DATA.forEach(m => {
+        state.collectedIds.add(m.id);
+        state.integratedIds.add(m.id);
+      });
+      playSound('fanfare');
+      launchConfetti();
+      renderUI();
+      renderAssemblySlots();
+      appendSerialLog(`[SISTEMA COMPLETO] Los 6 materiales han sido ensamblados. Bucle sensoriomotor activo.`);
+      updateGyroSimulation(70);
+      document.getElementById('gyroSlider').value = 70;
+    }
+
+    // Interactive Simulator 1: Trigger Piezo Disc on Fingers (External Contact -> 250Hz Vibration)
+    const FINGER_NAMES = [
+      { name: 'Pulgar', gpio: 'GPIO 5', cx: 415, cy: 52 },
+      { name: 'Índice', gpio: 'GPIO 1', cx: 545, cy: 105 },
+      { name: 'Medio', gpio: 'GPIO 2', cx: 570, cy: 175 },
+      { name: 'Anular', gpio: 'GPIO 3', cx: 550, cy: 245 },
+      { name: 'Meñique', gpio: 'GPIO 10', cx: 505, cy: 312 }
+    ];
+
+    function triggerPiezoFinger(fingerIdx) {
+      const finger = FINGER_NAMES[fingerIdx];
+      if (!finger) return;
+
+      playSound('haptic250');
+
+      const disc = document.getElementById(`piezoDisc${fingerIdx}`);
+      const wave = document.getElementById('svgHapticWave');
+      const fingerGroup = document.getElementById(`fingerGroup${fingerIdx}`);
+      const telemetryPiezo = document.getElementById('telemetryPiezo');
+
+      // Move haptic wave ring to the clicked finger
+      wave.setAttribute('cx', finger.cx);
+      wave.setAttribute('cy', finger.cy);
+      wave.setAttribute('opacity', '1');
+
+      disc.setAttribute('fill', '#10b981');
+      fingerGroup.classList.add('vibrate-active');
+      telemetryPiezo.textContent = `PWM 250Hz (${finger.name})`;
+      telemetryPiezo.className = 'text-sm font-bold text-emerald-400 animate-pulse';
+
+      appendSerialLog(
+        `[PIEZO ${finger.name.toUpperCase()} - ${finger.gpio}] Derivada dV/dx = 4 V/mm detectada -> Modo OUTPUT PWM 250 Hz (Pacini).`
+      );
+
+      setTimeout(() => {
+        disc.setAttribute('fill', '#fef08a');
+        wave.setAttribute('opacity', '0');
+        fingerGroup.classList.remove('vibrate-active');
+        telemetryPiezo.textContent = 'INPUT (ADC)';
+        telemetryPiezo.className = 'text-sm font-bold text-violet-300';
+      }, 650);
+    }
+
+    // Interactive Simulator 2: Gyroscope Slider -> Servo Rotation + Tendon Tension + Integral Work
+    function updateGyroSimulation(angleDegStr) {
+      const angleDeg = parseFloat(angleDegStr);
+      const angleRad = (angleDeg * Math.PI) / 180;
+
+      // Update angle label
+      document.getElementById('simAngleValue').textContent = `${angleDeg}° (${angleRad.toFixed(2)} rad)`;
+
+      // Rotate Servomotor Pulley in SVG
+      const pulley = document.getElementById('svgServoPulley');
+      pulley.setAttribute('transform', `translate(195, 188) rotate(${angleDeg})`);
+
+      // Update Gyroscope text inside SVG
+      const omegaApprox = (angleRad * 3.5).toFixed(1);
+      document.getElementById('svgGyroText').textContent = `θ = ${angleDeg}° | ω = ${omegaApprox} rad/s`;
+
+      // Flex the 5 fingers slightly inward proportional to servo traction
+      const flexOffset = (angleDeg / 140) * 32;
+      const baseCoords = [
+        { x0: 330, y0: 112, x1: 415 - flexOffset * 0.7, y1: 52 + flexOffset * 0.5 },
+        { x0: 410, y0: 132, x1: 545 - flexOffset, y1: 105 + flexOffset * 0.25 },
+        { x0: 415, y0: 178, x1: 570 - flexOffset * 1.1, y1: 175 },
+        { x0: 412, y0: 222, x1: 550 - flexOffset, y1: 245 - flexOffset * 0.2 },
+        { x0: 400, y0: 258, x1: 505 - flexOffset * 0.85, y1: 312 - flexOffset * 0.35 }
+      ];
+
+      baseCoords.forEach((c, idx) => {
+        const fPath = document.getElementById(`fingerPath${idx}`);
+        const tLine = document.getElementById(`tendonLine${idx}`);
+        const pDisc = document.getElementById(`piezoDisc${idx}`);
+
+        if (idx === 0) {
+          fPath.setAttribute('d', `M ${c.x0} ${c.y0} Q 365 60 ${c.x1} ${c.y1}`);
+          tLine.setAttribute('d', `M 195 168 Q 290 110 ${c.x1} ${c.y1}`);
+        } else {
+          fPath.setAttribute('d', `M ${c.x0} ${c.y0} L ${c.x1} ${c.y1}`);
+          tLine.setAttribute('d', `M 195 ${176 + idx * 8} L ${c.x1} ${c.y1}`);
+        }
+        pDisc.setAttribute('cx', c.x1);
+        pDisc.setAttribute('cy', c.y1);
+        FINGER_NAMES[idx].cx = c.x1;
+        FINGER_NAMES[idx].cy = c.y1;
+      });
+
+      // Live Math Telemetry Updates
+      const tensionN = (20 * (1 - Math.exp(-1.2 * angleRad))).toFixed(1);
+      const workJ = (3 * angleRad * angleRad + 2 * angleRad).toFixed(2);
+      const cableMm = (angleRad * angleRad * 3.8).toFixed(1);
+
+      document.getElementById('telemetryTension').textContent = `${tensionN} N`;
+      document.getElementById('telemetryWork').textContent = `${workJ} J`;
+      document.getElementById('telemetryCable').textContent = `${cableMm} mm`;
+
+      if (angleDeg > 5 && angleDeg % 20 === 0) {
+        appendSerialLog(
+          `[GIROSCOPIO -> SERVO] θ=${angleDeg}° (${angleRad.toFixed(2)} rad) | Tracción Hilo=${tensionN}N | Trabajo W=${workJ}J`
+        );
+      }
+    }
+
+    function appendSerialLog(text) {
+      const logBox = document.getElementById('serialMonitorLog');
+      if (!logBox) return;
+      const entry = document.createElement('div');
+      entry.textContent = text;
+      logBox.appendChild(entry);
+      logBox.scrollTop = logBox.scrollHeight;
+    }
+
+    // -------------------------------------------------------------------------
+    // 9. HELP & RESET MODALS + CONFETTI CELEBRATION
+    // -------------------------------------------------------------------------
+    function openHelpModal() {
+      playSound('click');
+      const m = document.getElementById('helpModal');
+      m.classList.remove('hidden');
+      m.classList.add('flex');
+    }
+
+    function closeHelpModal() {
+      const m = document.getElementById('helpModal');
+      m.classList.add('hidden');
+      m.classList.remove('flex');
+    }
+
+    function resetGamePrompt() {
+      playSound('click');
+      const m = document.getElementById('resetModal');
+      m.classList.remove('hidden');
+      m.classList.add('flex');
+    }
+
+    function closeResetModal() {
+      const m = document.getElementById('resetModal');
+      m.classList.add('hidden');
+      m.classList.remove('flex');
+    }
+
+    function confirmResetGame() {
+      state.collectedIds.clear();
+      state.integratedIds.clear();
+      state.attempts = 0;
+      state.correctCount = 0;
+      state.player.x = 0.50;
+      state.player.y = 0.50;
+      state.player.targetX = null;
+      state.player.targetY = null;
+      closeResetModal();
+      renderUI();
+      playSound('click');
+    }
+
+    // Confetti Particle System
+    function launchConfetti() {
+      const cCanvas = document.getElementById('confettiCanvas');
+      cCanvas.classList.remove('hidden');
+      cCanvas.width = window.innerWidth;
+      cCanvas.height = window.innerHeight;
+      const cCtx = cCanvas.getContext('2d');
+
+      const colors = ['#06b6d4', '#10b981', '#8b5cf6', '#f59e0b', '#f43f5e'];
+      const particles = Array.from({ length: 95 }, () => ({
+        x: Math.random() * cCanvas.width,
+        y: -20 - Math.random() * 200,
+        w: 7 + Math.random() * 6,
+        h: 10 + Math.random() * 8,
+        color: colors[Math.floor(Math.random() * colors.length)],
+        vx: (Math.random() - 0.5) * 4,
+        vy: 3 + Math.random() * 4.5,
+        angle: Math.random() * Math.PI * 2,
+        vAngle: (Math.random() - 0.5) * 0.15
+      }));
+
+      let frames = 0;
+      function drawConfetti() {
+        frames++;
+        cCtx.clearRect(0, 0, cCanvas.width, cCanvas.height);
+        particles.forEach(p => {
+          p.x += p.vx;
+          p.y += p.vy;
+          p.angle += p.vAngle;
+          cCtx.save();
+          cCtx.translate(p.x, p.y);
+          cCtx.rotate(p.angle);
+          cCtx.fillStyle = p.color;
+          cCtx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+          cCtx.restore();
+        });
+
+        if (frames < 170) {
+          requestAnimationFrame(drawConfetti);
+        } else {
+          cCanvas.classList.add('hidden');
+        }
+      }
+      drawConfetti();
+    }
+
+    // -------------------------------------------------------------------------
+    // 10. INITIALIZE ON WINDOW LOAD
+    // -------------------------------------------------------------------------
+    window.onload = function () {
+      resizeCanvas();
+      renderUI();
+      gameLoop();
+    };
+  </script>
+</body>
+</html>
